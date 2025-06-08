@@ -96,14 +96,14 @@ export default function DotaTable() {
                       {isValidMedal ? (
                         <>
                           <Image 
-                            src={`/medals/medal_${medal}.png`}
+                            src={`https://esaki-jrr.com/ranking/medals/medal_${medal}.png`}
                             alt="base medal"
                             fill
                             className="object-contain"
                           />
                           {isValidStar && (
                             <Image 
-                              src={`/medals/star_${stars}.png`}
+                              src={`https://esaki-jrr.com/ranking/medals/star_${stars}.png`}
                               alt="stars"
                               fill
                               className="object-contain"
