@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   assetPrefix:'/ranking/',
   trailingSlash: true,
    images: {
-    domains: ['avatars.steamstatic.com'],
+    domains: ['avatars.steamstatic.com',"esaki-jrr.com"],
   },
 };
 
