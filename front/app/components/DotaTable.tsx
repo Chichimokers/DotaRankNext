@@ -5,21 +5,19 @@ import Image from 'next/image';
 
 type PlayerInfo = {
   steam_id: string;
-  dota_info?: {
-    mmr_estimate?: number;
-    rank_tier?: number;
-    profile?: string;
-    avatar?: string;
-  };
+  mmr_estimate: number | null;
+  rank_tier: number | null;
+  profile: string | null;
+  avatar: string | null;
   error?: string;
 };
 
-const estimateMMR = (rank_tier?: number): string => {
+const estimateMMR = (rank_tier?: number | null): string => {
   if (!rank_tier) return 'N/A';
-  
+
   const medal = Math.floor(rank_tier / 10);
   const stars = rank_tier % 10;
-  
+
   const baseMMR: Record<number, number> = {
     1: 0,     // Herald
     2: 770,   // Guardian
@@ -30,122 +28,186 @@ const estimateMMR = (rank_tier?: number): string => {
     7: 4620,  // Divine
     8: 5420   // Immortal
   };
-  
+
   if (!baseMMR[medal]) return 'N/A';
-  
+
   const mmrPerStar = 154;
   const effectiveStars = Math.min(stars, medal === 7 ? 7 : 5);
   const estimatedMMR = baseMMR[medal] + (effectiveStars * mmrPerStar);
-  
+
   return `${estimatedMMR}+`;
 };
 
 export default function DotaTable() {
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
+    setLoading(true);
     fetch('https://esaki-jrr.com/apidota/dota-info')
       .then(res => res.json())
-      .then(setPlayers)
+      .then(data => {
+        setPlayers(data.results || []);
+      })
+      .catch(() => setPlayers([]))
       .finally(() => setLoading(false));
   }, []);
 
-  const getMedalComponents = (rank_tier?: number) => {
+  const filteredPlayers = players.filter(p => {
+    if (!p.profile) return false;
+    return p.profile.toLowerCase().includes(filter.toLowerCase());
+  });
+
+  // Pagination
+  const pageCount = Math.ceil(filteredPlayers.length / itemsPerPage);
+  const paginatedPlayers = filteredPlayers.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  );
+
+  const getMedalComponents = (rank_tier?: number | null) => {
     if (!rank_tier) return { medal: 0, stars: 0 };
     const medal = Math.floor(rank_tier / 10);
     const stars = rank_tier % 10;
     return { medal, stars };
   };
 
-  if (loading) return <p className="text-center text-white">Cargando jugadores...</p>;
-
-  // Filtrar jugadores conocidos
-  const knownPlayers = players.filter(player => 
-    player.dota_info?.profile && player.dota_info.profile !== 'Desconocido'
-  );
-
   return (
-    <div className="overflow-x-auto p-4">
-      <table className="min-w-full bg-gray-800 text-white rounded-lg overflow-hidden shadow-lg">
-        <thead>
-          <tr className="bg-gray-700">
-            <th className="p-3 text-left">Jugador</th>
-            <th className="p-3 text-left">MMR</th>
-            <th className="p-3 text-left">Medalla</th>
-            <th className="p-3 text-left">Avatar</th>
-          </tr>
-        </thead>
-        <tbody>
-          {knownPlayers.length > 0 ? (
-            knownPlayers.map((p, idx) => {
-              const { medal, stars } = getMedalComponents(p.dota_info?.rank_tier);
-              const isValidMedal = medal >= 1 && medal <= 8;
-              const isValidStar = stars >= 1 && stars <= 7;
-              
-              return (
-                <tr key={idx} className="border-t border-gray-600 hover:bg-gray-700">
-                  <td className="p-3">{p.dota_info?.profile}</td>
-                  <td className="p-3">
-                    {p.dota_info?.mmr_estimate 
-                      ? `${p.dota_info.mmr_estimate}` 
-                      : estimateMMR(p.dota_info?.rank_tier)}
-                  </td>
-                  <td className="p-3">
-                    <div className="relative w-20 h-20">
-                      {isValidMedal ? (
-                        <>
-                          <Image 
-                            src={`https://esaki-jrr.com/ranking/medals/medal_${medal}.png`}
-                            alt="base medal"
-                            fill
-                            className="object-contain"
-                          />
-                          {isValidStar && (
-                            <Image 
-                              src={`https://esaki-jrr.com/ranking/medals/star_${stars}.png`}
-                              alt="stars"
-                              fill
-                              className="object-contain"
-                            />
-                          )}
-                        </>
-                      ) : (
-                        <Image
-                          src="/medals/unranked.png"
-                          alt="unranked"
-                          fill
-                          className="object-contain"
-                        />
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    {p.dota_info?.avatar ? (
-                      <div className="relative w-20 h-20">
-                        <Image
-                          src={p.dota_info.avatar}
-                          alt="avatar"
-                          fill
-                          className="rounded-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      'No disponible'
-                    )}
-                  </td>
+    <div className="p-4">
+      <input
+        type="text"
+        placeholder="Filtrar por nombre..."
+        value={filter}
+        onChange={e => {
+          setFilter(e.target.value);
+          setPage(1);
+        }}
+        className="mb-4 w-full p-2 rounded border border-gray-600 bg-gray-900 text-white"
+      />
+
+      {loading ? (
+        <p className="text-center text-white">Cargando jugadores...</p>
+      ) : (
+        <>
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-gray-800 text-white rounded-lg overflow-hidden shadow-lg">
+              <thead>
+                <tr className="bg-gray-700">
+                  <th className="p-3 text-left">Jugador</th>
+                  <th className="p-3 text-left">MMR</th>
+                  <th className="p-3 text-left">Medalla</th>
+                  <th className="p-3 text-left">Avatar</th>
                 </tr>
-              );
-            })
-          ) : (
-            <tr>
-              <td colSpan={4} className="p-3 text-center text-gray-400">
-                {loading ? 'Cargando...' : 'No se encontraron jugadores conocidos'}
-              </td>
-            </tr>
+              </thead>
+              <tbody>
+                {paginatedPlayers.length > 0 ? (
+                  paginatedPlayers.map((p, idx) => {
+                    const { medal, stars } = getMedalComponents(p.rank_tier);
+                    const isValidMedal = medal >= 1 && medal <= 8;
+                    const isValidStar = stars >= 1 && stars <= 7;
+
+                    return (
+                      <tr key={p.steam_id} className="border-t border-gray-600 hover:bg-gray-700">
+                        <td className="p-3">{p.profile}</td>
+                        <td className="p-3">
+                          {p.mmr_estimate
+                            ? p.mmr_estimate
+                            : estimateMMR(p.rank_tier)}
+                        </td>
+                        <td className="p-3">
+                          <div className="relative w-20 h-20">
+                            {isValidMedal ? (
+                              <>
+                                <Image
+                                  src={`https://esaki-jrr.com/ranking/medals/medal_${medal}.png`}
+                                  alt="base medal"
+                                  fill
+                                  className="object-contain"
+                                />
+                                {isValidStar && (
+                                  <Image
+                                    src={`https://esaki-jrr.com/ranking/medals/star_${stars}.png`}
+                                    alt="stars"
+                                    fill
+                                    className="object-contain"
+                                  />
+                                )}
+                              </>
+                            ) : (
+                              <Image
+                                src="/medals/unranked.png"
+                                alt="unranked"
+                                fill
+                                className="object-contain"
+                              />
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          {p.avatar ? (
+                            <div className="relative w-20 h-20">
+                              <Image
+                                src={p.avatar}
+                                alt="avatar"
+                                fill
+                                className="rounded-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            'No disponible'
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="p-3 text-center text-gray-400">
+                      No se encontraron jugadores
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Paginación */}
+          {pageCount > 1 && (
+            <div className="mt-4 flex justify-center gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 bg-gray-700 rounded disabled:opacity-50"
+              >
+                Anterior
+              </button>
+
+              {[...Array(pageCount)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i + 1)}
+                  className={`px-3 py-1 rounded ${
+                    page === i + 1 ? 'bg-blue-600' : 'bg-gray-700'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setPage(p => Math.min(pageCount, p + 1))}
+                disabled={page === pageCount}
+                className="px-3 py-1 bg-gray-700 rounded disabled:opacity-50"
+              >
+                Siguiente
+              </button>
+            </div>
           )}
-        </tbody>
-      </table>
+        </>
+      )}
     </div>
   );
 }
