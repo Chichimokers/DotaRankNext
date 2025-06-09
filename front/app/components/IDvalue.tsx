@@ -8,7 +8,7 @@ export default function IdValue() {
   function sendID() {
     if (!id) return alert('Por favor, introduce un ID');
 
-    fetch('https://esaki-jrr.com/api-dota/add-friend', {
+    fetch('https://esaki-jrr.com/apidota/add-friend', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
