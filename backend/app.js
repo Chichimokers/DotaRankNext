@@ -39,8 +39,7 @@ app.post('/add-friend', (req, res) => {
 app.get('/dota-info', async (req, res) => {
   try {
     const rows = db.prepare(`
-      SELECT steam_id, mmr_estimate, rank_tier, profile, avatar FROM friends
-      WHERE profile IS NOT NULL AND profile != ''
+  SELECT steam_id, mmr_estimate, rank_tier, profile, avatar FROM friends
     `).all();
 
     const actualizarYObtenerInfo = async (row) => {
