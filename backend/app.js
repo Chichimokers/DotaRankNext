@@ -37,22 +37,11 @@ app.post('/add-friend', (req, res) => {
 });
 
 app.get('/dota-info', async (req, res) => {
-  const search = (req.query.search || '').trim().toLowerCase();
-
   try {
-    let baseQuery = `
+    const rows = db.prepare(`
       SELECT steam_id, mmr_estimate, rank_tier, profile, avatar FROM friends
       WHERE profile IS NOT NULL AND profile != ''
-    `;
-
-    const params = [];
-
-    if (search.length > 0) {
-      baseQuery += ` AND LOWER(profile) LIKE ?`;
-      params.push(`%${search}%`);
-    }
-
-    const rows = db.prepare(baseQuery).all(...params);
+    `).all();
 
     const actualizarYObtenerInfo = async (row) => {
       const steam_id = row.steam_id;
@@ -106,7 +95,7 @@ app.get('/dota-info', async (req, res) => {
     for (const row of rows) {
       const updated = await actualizarYObtenerInfo(row);
       resultados.push(updated);
-      await delay(1000);
+      await delay(1000);  // Para no saturar la API
     }
 
     res.json({
