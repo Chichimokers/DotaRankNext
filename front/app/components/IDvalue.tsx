@@ -13,7 +13,7 @@ export default function IdValue() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({ steam_id:id }),
     })
       .then(res => res.json())
       .then(data => {
