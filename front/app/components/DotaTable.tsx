@@ -56,21 +56,22 @@ export default function DotaTable() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Filtrar por perfil
+  
   const filteredPlayers = players.filter(p => {
     if (!p.profile) return false;
     return p.profile.toLowerCase().includes(filter.toLowerCase());
   });
 
-  // Ordenar por mmr_estimate descendente, colocando null como 0 para que queden al final
+
   const sortedPlayers = filteredPlayers.sort((a, b) => {
-    const mmrA = a.mmr_estimate ?? 0;
-    const mmrB = b.mmr_estimate ?? 0;
+    const mmrA = a.rank_tier ?? 0;
+    const mmrB = b.rank_tier ?? 0;
     return mmrB - mmrA;
   });
 
-  // Paginación
+ 
   const pageCount = Math.ceil(sortedPlayers.length / itemsPerPage);
+
   const paginatedPlayers = sortedPlayers.slice(
     (page - 1) * itemsPerPage,
     page * itemsPerPage
