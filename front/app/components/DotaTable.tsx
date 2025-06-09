@@ -56,14 +56,22 @@ export default function DotaTable() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Filtrar por perfil
   const filteredPlayers = players.filter(p => {
     if (!p.profile) return false;
     return p.profile.toLowerCase().includes(filter.toLowerCase());
   });
 
-  // Pagination
-  const pageCount = Math.ceil(filteredPlayers.length / itemsPerPage);
-  const paginatedPlayers = filteredPlayers.slice(
+  // Ordenar por mmr_estimate descendente, colocando null como 0 para que queden al final
+  const sortedPlayers = filteredPlayers.sort((a, b) => {
+    const mmrA = a.mmr_estimate ?? 0;
+    const mmrB = b.mmr_estimate ?? 0;
+    return mmrB - mmrA;
+  });
+
+  // Paginación
+  const pageCount = Math.ceil(sortedPlayers.length / itemsPerPage);
+  const paginatedPlayers = sortedPlayers.slice(
     (page - 1) * itemsPerPage,
     page * itemsPerPage
   );
@@ -104,13 +112,16 @@ export default function DotaTable() {
               </thead>
               <tbody>
                 {paginatedPlayers.length > 0 ? (
-                  paginatedPlayers.map((p, idx) => {
+                  paginatedPlayers.map((p) => {
                     const { medal, stars } = getMedalComponents(p.rank_tier);
                     const isValidMedal = medal >= 1 && medal <= 8;
                     const isValidStar = stars >= 1 && stars <= 7;
 
                     return (
-                      <tr key={p.steam_id} className="border-t border-gray-600 hover:bg-gray-700">
+                      <tr
+                        key={p.steam_id}
+                        className="border-t border-gray-600 hover:bg-gray-700"
+                      >
                         <td className="p-3">{p.profile}</td>
                         <td className="p-3">
                           {p.mmr_estimate
