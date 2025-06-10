@@ -13,7 +13,7 @@ type PlayerInfo = {
 };
 
 const estimateMMR = (rank_tier?: number | null): string => {
-  if (!rank_tier) return 'N/A';
+  if (!rank_tier) return 'Unranked or Private';
 
   const medal = Math.floor(rank_tier / 10);
   const stars = rank_tier % 10;
@@ -29,7 +29,7 @@ const estimateMMR = (rank_tier?: number | null): string => {
     8: 5420   // Immortal
   };
 
-  if (!baseMMR[medal]) return 'N/A';
+  if (!baseMMR[medal]) return 'Unranked or Private';
 
   const mmrPerStar = 154;
   const effectiveStars = Math.min(stars, medal === 7 ? 7 : 5);
@@ -56,7 +56,7 @@ export default function DotaTable() {
       .finally(() => setLoading(false));
   }, []);
 
-  
+  console.log(players)
   const filteredPlayers = players.filter(p => {
     if (!p.profile) return false;
     return p.profile.toLowerCase().includes(filter.toLowerCase());
@@ -149,12 +149,7 @@ export default function DotaTable() {
                                 )}
                               </>
                             ) : (
-                              <Image
-                                src="/medals/unranked.png"
-                                alt="unranked"
-                                fill
-                                className="object-contain"
-                              />
+                            <h1>Unrakend or Private</h1>
                             )}
                           </div>
                         </td>
